@@ -60,6 +60,10 @@ client.on('messageCreate', async (message) => {
     const args = await message.content.slice(prefix.length).trim().split(/ +/);
     const msgCommand = await args.shift().toLowerCase();
 
+    if(message.author.id == 808318773257437216 && msgCommand == 'send'){
+        sendRandom();
+    }
+
 })
 
 
