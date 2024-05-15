@@ -59,7 +59,6 @@ client.on('ready', async (client) => {
 client.on('messageCreate', async (message) => {
     const args = await message.content.slice(prefix.length).trim().split(/ +/);
     const msgCommand = await args.shift().toLowerCase();
-    const nsfw = await fetchNsfwImage('anal');
 
 })
 
@@ -73,7 +72,6 @@ async function sendRandom() {
     const randomNum = (Math.floor(Math.random() * categoryChannelsArray.length))
     let i = 0;
     let randomCategoryName, randomCategoryId;
-    console.log(randomNum)
     for(let category in categoryChannels){
         if(i == randomNum){
             randomCategoryName = category;
@@ -105,7 +103,7 @@ async function fetchNsfwImage(category) {
         }
         const data = await response.json();
         data.code = 200;
-
+        console.log(data)
         return data;
 
     } catch (error) {
