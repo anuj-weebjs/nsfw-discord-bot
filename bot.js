@@ -23,9 +23,25 @@ const categoryChannels = {
     hneko: '1240124777948250153',
     hthigh: '1240124820583354498'
 };
+
+
 let categoryChannelsArray = []
 for (a in categoryChannels) {
     categoryChannelsArray.push(a);
+}
+
+
+const redditChannels = {
+    gonewild: '1240186829974667276',
+    rule34: '1240187284263796878',
+    realgirls: '1240187584446206002',
+    porn: '1240187764998279178',
+    ass: '1240188554756489236',
+};
+
+let redditChannelsArray = [];
+for(a in redditChannels){
+    redditChannelsArray.push(a);
 }
 
 const app = express();
@@ -52,8 +68,13 @@ const client = new Client({
 client.on('ready', async (client) => {
     console.log(`Logged In as ${client.user.tag}`);
     setInterval(() => {
-        sendRandom()
+        sendRandomFromNightApi()
     }, randomNumber(60000 * 45, 60000 * 60));
+
+
+    setInterval(() => {
+        sendRandomFromRedditApi();
+    }, randomNumber(60000 * 15, 60000 * 30));
 });
 
 client.on('messageCreate', async (message) => {
@@ -61,7 +82,9 @@ client.on('messageCreate', async (message) => {
     const msgCommand = await args.shift().toLowerCase();
 
     if(message.author.id == 808318773257437216 && msgCommand == 'send'){
-        sendRandom();
+        sendRandomFromNightApi();
+    }else if(message.author.id == 808318773257437216 && msgCommand == 'reddit'){
+        sendRandomFromRedditApi();
     }
 
 })
@@ -71,7 +94,7 @@ client.login(token);
 
 
 
-async function sendRandom() {
+async function sendRandomFromNightApi() {
     // const b = categoryChannels.categoryChannelsArray[(Math.floor(Math.random() * categoryChannelsArray.length))]
     const randomNum = (Math.floor(Math.random() * categoryChannelsArray.length))
     let i = 0;
@@ -83,18 +106,16 @@ async function sendRandom() {
         }
         i++;
     }
-    const nsfw = await fetchNsfwImage(randomCategoryName);
+    const nsfw = await fetchFromNightApi(randomCategoryName);
     const channel = await client.channels.cache.get(randomCategoryId);
     
     // console.log(nsfw)
     await channel.send(nsfw.content.url)
 
-
-
 }
 
 
-async function fetchNsfwImage(category) {
+async function fetchFromNightApi(category) {
     try {
         const response = await fetch(`https://api.night-api.com/images/nsfw/${category}`, {
             headers: {
@@ -114,6 +135,47 @@ async function fetchNsfwImage(category) {
         console.error("Fetch error:", error);
     }
 }
+
+
+async function sendRandomFromRedditApi() {
+    // const b = categoryChannels.categoryChannelsArray[(Math.floor(Math.random() * categoryChannelsArray.length))]
+    const randomNum = (Math.floor(Math.random() * redditChannelsArray.length))
+    let i = 0;
+    let randomCategoryName, randomCategoryId;
+    for(let category in redditChannels){
+        if(i == randomNum){
+            randomCategoryName = category;
+            randomCategoryId = redditChannels[category];
+        }
+        i++;
+    }
+    const nsfw = await fetchFromRedditApi(randomCategoryName);
+    const channel = await client.channels.cache.get(randomCategoryId);
+    
+    await channel.send(nsfw.preview[(nsfw.preview.length) - 1])
+
+
+}
+
+
+async function fetchFromRedditApi(subreddit) {
+    try {
+        const response = await fetch(`https://meme-api.com/gimme/${subreddit}`);
+
+        if (!response) {
+            throw new Error(`No Response from api`);
+        }
+        const data = await response.json();
+        data.code = 200;
+        console.log(data)
+        return data;
+
+    } catch (error) {
+        console.error("Fetch error:", error);
+    }
+}
+
+
 
 function randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
