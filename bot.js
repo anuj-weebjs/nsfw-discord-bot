@@ -40,7 +40,7 @@ const redditChannels = {
 };
 
 let redditChannelsArray = [];
-for(a in redditChannels){
+for (a in redditChannels) {
     redditChannelsArray.push(a);
 }
 
@@ -81,9 +81,10 @@ client.on('messageCreate', async (message) => {
     const args = await message.content.slice(prefix.length).trim().split(/ +/);
     const msgCommand = await args.shift().toLowerCase();
 
-    if(message.author.id == 808318773257437216 && msgCommand == 'send'){
+    if (message.author.id == 808318773257437216 && msgCommand == 'send') {
         sendRandomFromNightApi();
-    }else if(message.author.id == 808318773257437216 && msgCommand == 'reddit'){
+    } else if (message.author.id == 808318773257437216 && msgCommand == 'reddit') {
+
         sendRandomFromRedditApi();
     }
 
@@ -99,8 +100,8 @@ async function sendRandomFromNightApi() {
     const randomNum = (Math.floor(Math.random() * categoryChannelsArray.length))
     let i = 0;
     let randomCategoryName, randomCategoryId;
-    for(let category in categoryChannels){
-        if(i == randomNum){
+    for (let category in categoryChannels) {
+        if (i == randomNum) {
             randomCategoryName = category;
             randomCategoryId = categoryChannels[category];
         }
@@ -108,7 +109,7 @@ async function sendRandomFromNightApi() {
     }
     const nsfw = await fetchFromNightApi(randomCategoryName);
     const channel = await client.channels.cache.get(randomCategoryId);
-    
+
     // console.log(nsfw)
     await channel.send(nsfw.content.url)
 
@@ -138,36 +139,42 @@ async function fetchFromNightApi(category) {
 
 
 async function sendRandomFromRedditApi() {
-    // const b = categoryChannels.categoryChannelsArray[(Math.floor(Math.random() * categoryChannelsArray.length))]
-    const randomNum = (Math.floor(Math.random() * redditChannelsArray.length))
-    let i = 0;
-    let randomCategoryName, randomCategoryId;
-    for(let category in redditChannels){
-        if(i == randomNum){
-            randomCategoryName = category;
-            randomCategoryId = redditChannels[category];
-        }
-        i++;
-    }
-    const nsfw = await fetchFromRedditApi(randomCategoryName);
-    const channel = await client.channels.cache.get(randomCategoryId);
-    
-    await channel.send(nsfw.preview[(nsfw.preview.length) - 1])
+    try {
 
+        // const b = categoryChannels.categoryChannelsArray[(Math.floor(Math.random() * categoryChannelsArray.length))]
+        const randomNum = (Math.floor(Math.random() * redditChannelsArray.length))
+        let i = 0;
+        let randomCategoryName, randomCategoryId;
+        for (let category in redditChannels) {
+            if (i == randomNum) {
+                randomCategoryName = category;
+                randomCategoryId = redditChannels[category];
+            }
+            i++;
+        }
+        const nsfw = await fetchFromRedditApi(randomCategoryName);
+        const channel = await client.channels.cache.get(randomCategoryId);
+
+        await channel.send(nsfw.preview[(nsfw.preview.length) - 1])
+
+    } catch (error) {
+
+    }
 
 }
 
 
 async function fetchFromRedditApi(subreddit) {
     try {
+        console.log(subreddit)
         const response = await fetch(`https://meme-api.com/gimme/${subreddit}`);
 
         if (!response) {
             throw new Error(`No Response from api`);
         }
+        console.log(response)
         const data = await response.json();
         data.code = 200;
-        console.log(data)
         return data;
 
     } catch (error) {
@@ -180,3 +187,4 @@ async function fetchFromRedditApi(subreddit) {
 function randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
 }
+
