@@ -50,6 +50,12 @@ app.get("/", (req, res) => {
         success: "true"
     });
 });
+
+app.get("start", (req, res) =>{
+    res.send({running: true});
+    client.login(token);
+}
+        
 app.listen(port);
 
 
@@ -67,6 +73,12 @@ const client = new Client({
 
 client.on('ready', async (client) => {
     console.log(`Logged In as ${client.user.tag}`);
+    start();
+});
+
+
+async function start(){
+    try{
     setInterval(() => {
         sendRandomFromNightApi()
     }, randomNumber(60000 * 45, 60000 * 60));
@@ -75,7 +87,11 @@ client.on('ready', async (client) => {
     setInterval(() => {
         sendRandomFromRedditApi();
     }, randomNumber(60000 * 15, 60000 * 30));
-});
+    } catch(err){
+        console.log(err);
+    }
+}
+
 
 client.on('messageCreate', async (message) => {
     const args = await message.content.slice(prefix.length).trim().split(/ +/);
@@ -86,6 +102,8 @@ client.on('messageCreate', async (message) => {
     } else if (message.author.id == 808318773257437216 && msgCommand == 'reddit') {
 
         sendRandomFromRedditApi();
+    } else if (message.author.id == 808318773257437216 && msgCommand == 'start') {
+        start();
     }
 
 })
