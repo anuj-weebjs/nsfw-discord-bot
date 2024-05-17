@@ -96,22 +96,28 @@ client.login(token);
 
 
 async function sendRandomFromNightApi() {
-    // const b = categoryChannels.categoryChannelsArray[(Math.floor(Math.random() * categoryChannelsArray.length))]
-    const randomNum = (Math.floor(Math.random() * categoryChannelsArray.length))
-    let i = 0;
-    let randomCategoryName, randomCategoryId;
-    for (let category in categoryChannels) {
-        if (i == randomNum) {
-            randomCategoryName = category;
-            randomCategoryId = categoryChannels[category];
-        }
-        i++;
-    }
-    const nsfw = await fetchFromNightApi(randomCategoryName);
-    const channel = await client.channels.cache.get(randomCategoryId);
 
-    // console.log(nsfw)
-    await channel.send(nsfw.content.url)
+    try {
+        // const b = categoryChannels.categoryChannelsArray[(Math.floor(Math.random() * categoryChannelsArray.length))]
+        const randomNum = (Math.floor(Math.random() * categoryChannelsArray.length))
+        let i = 0;
+        let randomCategoryName, randomCategoryId;
+        for (let category in categoryChannels) {
+            if (i == randomNum) {
+                randomCategoryName = category;
+                randomCategoryId = categoryChannels[category];
+            }
+            i++;
+        }
+        const nsfw = await fetchFromNightApi(randomCategoryName);
+        const channel = await client.channels.cache.get(randomCategoryId);
+        
+        // console.log(nsfw)
+        await channel.send(nsfw.content.url)
+        
+    } catch (error) {
+        console.error("Fetch error:", error);
+    }
 
 }
 
@@ -158,6 +164,7 @@ async function sendRandomFromRedditApi() {
         await channel.send(nsfw.preview[(nsfw.preview.length) - 1])
 
     } catch (error) {
+        console.error("Fetch error:", error);
 
     }
 
