@@ -54,7 +54,7 @@ app.get("/", (req, res) => {
 app.get("start", (req, res) =>{
     res.send({running: true});
     client.login(token);
-}
+});
         
 app.listen(port);
 
