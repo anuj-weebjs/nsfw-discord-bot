@@ -7,21 +7,22 @@ require('dotenv').config();
 const token = process.env.TOKEN;
 const nightApiToken = process.env.NIGHT_API_TOKEN;
 const prefix = process.env.PREFIX;
+const mongoUrl = process.env.MONGO_URI;
 
 const categoryChannels = {
-    boobs: `1240086165109866527`,
-    pussy: `1240096604694773780`,
-    ass: '1240100073111814187',
-    gonewild: '1240124489459564554',
-    anal: '1240124444484304926',
-    neko: '1240124847892205719',
-    thigh: '1240128537965498378',
-    hentai: '1240124671869849693',
-    hanal: '1240124537404657748',
-    hass: '1240124603309752373',
-    hboobs: '1240124643550040108',
-    hneko: '1240124777948250153',
-    hthigh: '1240124820583354498'
+    boobs: `1263136134188240946`,
+    pussy: `1263136242179117208`,
+    ass: '1263136321178701927',
+    gonewild: '1263136465140056084',
+    anal: '1263136564062588978',
+    neko: '1263136707868491827',
+    thigh: '1263136816710815787',
+    hentai: '1263137882248314911',
+    hanal: '1263138248209727519',
+    hass: '1263138340962832426',
+    hboobs: '1263138406414684203',
+    hneko: '1263138460647297127',
+    hthigh: '1263138504263729224'
 };
 
 
@@ -32,11 +33,11 @@ for (a in categoryChannels) {
 
 
 const redditChannels = {
-    gonewild: '1240186829974667276',
-    rule34: '1240187284263796878',
-    realgirls: '1240187584446206002',
-    porn: '1240187764998279178',
-    ass: '1240188554756489236',
+    gonewild: '1263140118659727381',
+    rule34: '1263140255993827439',
+    realgirls: '1263140285743890472',
+    porn: '1263140374625648774',
+    ass: '1263140324667166742',
 };
 
 let redditChannelsArray = [];
@@ -51,11 +52,11 @@ app.get("/", (req, res) => {
     });
 });
 
-app.get("start", (req, res) =>{
-    res.send({running: true});
+app.get("start", (req, res) => {
+    res.send({ running: true });
     client.login(token);
 });
-        
+
 app.listen(port);
 
 
@@ -77,17 +78,17 @@ client.on('ready', async (client) => {
 });
 
 
-async function start(){
-    try{
-    setInterval(() => {
-        sendRandomFromNightApi()
-    }, randomNumber(60000 * 45, 60000 * 60));
+async function start() {
+    try {
+        setInterval(() => {
+            sendRandomFromNightApi()
+        }, randomNumber(60000 * 45, 60000 * 60));
 
 
-    setInterval(() => {
-        sendRandomFromRedditApi();
-    }, randomNumber(60000 * 15, 60000 * 30));
-    } catch(err){
+        setInterval(() => {
+            sendRandomFromRedditApi();
+        }, randomNumber(60000 * 15, 60000 * 30));
+    } catch (err) {
         console.log(err);
     }
 }
@@ -97,46 +98,88 @@ client.on('messageCreate', async (message) => {
     const args = await message.content.slice(prefix.length).trim().split(/ +/);
     const msgCommand = await args.shift().toLowerCase();
 
-    if (message.author.id == 808318773257437216 && msgCommand == 'send') {
+    if (message.author.id == "808318773257437216" && msgCommand == 'send') {
         sendRandomFromNightApi();
-    } else if (message.author.id == 808318773257437216 && msgCommand == 'reddit') {
+    } else if (message.author.id == "808318773257437216" && msgCommand == 'reddit') {
 
         sendRandomFromRedditApi();
-    } else if (message.author.id == 808318773257437216 && msgCommand == 'start') {
+    } else if (message.author.id == "808318773257437216" && msgCommand == 'start') {
         start();
     }
 
 })
 
 
-client.login(token);
+main().catch(err => console.log(err));
+
+async function main() {
+    await mongoose.connect(mongoUrl);
+    console.log("Connected to db")
+
+    client.login(token);
+}
+
+
+const nightApiSchema = new mongoose.Schema({
+    id: {
+        type: Number,
+    }
+})
+const nightApiModel = mongoose.model('nightApi', nightApiSchema);
+const redditApiSchema = new mongoose.Schema({
+    link: {
+        type: String,
+    }
+})
+
+const redditApiModel = mongoose.model('redditApi', redditApiSchema);
 
 
 
 async function sendRandomFromNightApi() {
 
     try {
-        // const b = categoryChannels.categoryChannelsArray[(Math.floor(Math.random() * categoryChannelsArray.length))]
-        const randomNum = (Math.floor(Math.random() * categoryChannelsArray.length))
-        let i = 0;
-        let randomCategoryName, randomCategoryId;
-        for (let category in categoryChannels) {
-            if (i == randomNum) {
-                randomCategoryName = category;
-                randomCategoryId = categoryChannels[category];
+        while(true){
+
+            const randomNum = (Math.floor(Math.random() * categoryChannelsArray.length))
+            let i = 0;
+            var randomCategoryName, randomCategoryId;
+            for (let category in categoryChannels) {
+                if (i == randomNum) {
+                    randomCategoryName = category;
+                    randomCategoryId = categoryChannels[category];
+                }
+                i++;
             }
-            i++;
+            var nsfw = await fetchFromNightApi(randomCategoryName);
+            let isUnique = await isUniqueNightApi(nsfw.content.id);
+            if(isUnique){
+                break;
+            }
         }
-        const nsfw = await fetchFromNightApi(randomCategoryName);
+
+
         const channel = await client.channels.cache.get(randomCategoryId);
-        
-        // console.log(nsfw)
+
         await channel.send(nsfw.content.url)
-        
+
     } catch (error) {
         console.error("Fetch error:", error);
     }
 
+}
+
+async function isUniqueNightApi(id) {
+    let queryResult = await nightApiModel.findOne({ id: id });
+    if (queryResult) {
+        return false;
+    } else {
+        let newDoc = new nightApiModel({
+            id: id,
+        })
+        await newDoc.save();
+        return true;
+    }
 }
 
 
@@ -153,7 +196,7 @@ async function fetchFromNightApi(category) {
         }
         const data = await response.json();
         data.code = 200;
-        console.log(data)
+
         return data;
 
     } catch (error) {
@@ -164,19 +207,23 @@ async function fetchFromNightApi(category) {
 
 async function sendRandomFromRedditApi() {
     try {
-
-        // const b = categoryChannels.categoryChannelsArray[(Math.floor(Math.random() * categoryChannelsArray.length))]
-        const randomNum = (Math.floor(Math.random() * redditChannelsArray.length))
-        let i = 0;
-        let randomCategoryName, randomCategoryId;
-        for (let category in redditChannels) {
-            if (i == randomNum) {
-                randomCategoryName = category;
-                randomCategoryId = redditChannels[category];
+        while(true){
+            const randomNum = (Math.floor(Math.random() * redditChannelsArray.length))
+            let i = 0;
+            var randomCategoryName, randomCategoryId;
+            for (let category in redditChannels) {
+                if (i == randomNum) {
+                    randomCategoryName = category;
+                    randomCategoryId = redditChannels[category];
+                }
+                i++;
             }
-            i++;
+            var nsfw = await fetchFromRedditApi(randomCategoryName);
+            if(isUniqueRedditApi(nsfw.postLink)){
+                break;
+            }
         }
-        const nsfw = await fetchFromRedditApi(randomCategoryName);
+
         const channel = await client.channels.cache.get(randomCategoryId);
 
         await channel.send(nsfw.preview[(nsfw.preview.length) - 1])
@@ -188,6 +235,18 @@ async function sendRandomFromRedditApi() {
 
 }
 
+async function isUniqueRedditApi(link) {
+    let queryResult = await redditApiModel.findOne({ link: link });
+    if (queryResult) {
+        return false;
+    } else {
+        let newDoc = new redditApiModel({
+            link: link,
+        })
+        await newDoc.save();
+        return true;
+    }
+}
 
 async function fetchFromRedditApi(subreddit) {
     try {
@@ -197,17 +256,15 @@ async function fetchFromRedditApi(subreddit) {
         if (!response) {
             throw new Error(`No Response from api`);
         }
-        console.log(response)
         const data = await response.json();
         data.code = 200;
+        console.log(data)
         return data;
 
     } catch (error) {
         console.error("Fetch error:", error);
     }
 }
-
-
 
 function randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
