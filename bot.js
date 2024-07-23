@@ -219,12 +219,12 @@ async function sendRandomFromRedditApi() {
                 i++;
             }
             var nsfw = await fetchFromRedditApi(randomCategoryName);
-            if(isUniqueRedditApi(nsfw.postLink)){
+            if(isUniqueRedditApi(nsfw.preview[(nsfw.preview.length) - 1])){
                 break;
             }
         }
 
-        const channel = await client.channels.cache.get(randomCategoryId);
+        const channel =  client.channels.cache.get(randomCategoryId);
 
         await channel.send(nsfw.preview[(nsfw.preview.length) - 1])
 
